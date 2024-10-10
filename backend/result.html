@@ -9,7 +9,7 @@
     <h1>Cryptocurrency Prices</h1>
     <ul>
     {{ range .cryptoData }}
-        <li>{{ .ID }}: ₹{{ .PriceINR }}</li> 
+        <li>{{ .Name }} ({{ .Symbol }}): ₹{{ .PriceINR }} | Market Cap: ₹{{ .MarketCap }} | Volume: ₹{{ .Volume }}</li>
     {{ end }}
     </ul>
     <a href="/">Go Back</a>
