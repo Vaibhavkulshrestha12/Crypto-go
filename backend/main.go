@@ -13,7 +13,7 @@ import (
 	"github.com/gin-contrib/cors"
 )
 
-// CryptoData struct to hold the cryptocurrency data
+
 type CryptoData struct {
 	ID             string    `json:"id"`
 	Symbol         string    `json:"symbol"`
@@ -21,10 +21,10 @@ type CryptoData struct {
 	MarketCap      float64   `json:"market_cap"`
 	Volume         float64   `json:"total_volume"`
 	PriceINR       float64   `json:"current_price"`
-	HistoricalData [][]float64 `json:"historical_data"` // Include historical data
+	HistoricalData [][]float64 `json:"historical_data"` 
 }
 
-// CoinGeckoResponse struct to match the response from CoinGecko API
+
 type CoinGeckoResponse struct {
 	ID     string `json:"id"`
 	Symbol string `json:"symbol"`
@@ -42,12 +42,12 @@ type CoinGeckoResponse struct {
 	} `json:"market_data"`
 }
 
-// HistoricalData struct to hold the historical price data
+
 type HistoricalData struct {
 	Prices [][]float64 `json:"prices"`
 }
 
-// fetchCryptoPrice fetches the price data for a given cryptocurrency ID
+
 func fetchCryptoPrice(cryptoID string, wg *sync.WaitGroup, results chan<- CryptoData) {
 	defer wg.Done()
 
@@ -72,7 +72,7 @@ func fetchCryptoPrice(cryptoID string, wg *sync.WaitGroup, results chan<- Crypto
 		return
 	}
 
-	// Create CryptoData from CoinGeckoResponse
+	
 	cryptoData := CryptoData{
 		ID:        coinData.ID,
 		Symbol:    coinData.Symbol,
@@ -86,7 +86,7 @@ func fetchCryptoPrice(cryptoID string, wg *sync.WaitGroup, results chan<- Crypto
 	results <- cryptoData
 }
 
-// fetchCryptoPrices fetches prices for multiple cryptocurrencies
+
 func fetchCryptoPrices(cryptoIDs []string) ([]CryptoData, error) {
 	var wg sync.WaitGroup
 	results := make(chan CryptoData, len(cryptoIDs))
@@ -107,7 +107,7 @@ func fetchCryptoPrices(cryptoIDs []string) ([]CryptoData, error) {
 	return cryptoData, nil
 }
 
-// fetchHistoricalData fetches historical price data for a given cryptocurrency ID
+
 func fetchHistoricalData(cryptoID string) ([][]float64, error) {
 	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/%s/market_chart?vs_currency=inr&days=30", cryptoID)
 	resp, err := http.Get(url)
@@ -130,7 +130,7 @@ func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
 
-	// API endpoint for fetching cryptocurrency data
+	
 	r.POST("/fetch", func(c *gin.Context) {
 		cryptoIDsInput := c.PostForm("cryptoIDs")
 		cryptoIDs := strings.Split(cryptoIDsInput, ",")
@@ -145,7 +145,7 @@ func main() {
 			return
 		}
 
-		// Fetch historical data for each cryptocurrency
+		
 		for i := range cryptoData {
 			historicalPrices, err := fetchHistoricalData(cryptoData[i].ID)
 			if err != nil {
@@ -160,6 +160,6 @@ func main() {
 		})
 	})
 
-	// Run the backend server
+	
 	r.Run(":8080")
 }

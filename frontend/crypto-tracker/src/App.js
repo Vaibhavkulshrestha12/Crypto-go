@@ -13,7 +13,7 @@ import {
     CategoryScale
 } from 'chart.js';
 
-// Registering required Chart.js components
+
 ChartJS.register(
     LineElement,
     PointElement,
@@ -72,10 +72,10 @@ const CryptoTracker = () => {
     };
 
     useEffect(() => {
-        // Cleanup chart instance when component unmounts or data changes
+        
         return () => {
             if (data) {
-                setData(null); // Reset data to clear previous chart
+                setData(null); 
             }
         };
     }, [data]);
