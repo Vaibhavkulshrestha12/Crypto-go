@@ -64,7 +64,7 @@ const CryptoTracker = () => {
             const result = await response.json();
             console.log('Fetched data:', result);
             setData(result.cryptoData);
-            setError(''); // Clear any previous errors
+            setError(''); 
         } catch (error) {
             console.error('Error fetching data:', error);
             setError('Error fetching data. Please try again later.');
@@ -117,7 +117,7 @@ const CryptoTracker = () => {
                         <p>Market Cap: ₹{coin.MarketCap ? coin.MarketCap.toFixed(2) : 'N/A'}</p>
                         <p>Volume: ₹{coin.Volume ? coin.Volume.toFixed(2) : 'N/A'}</p>
 
-                        {/* Render historical data if available */}
+                        
                         {coin.historical_data && coin.historical_data.length > 0 && (
                             <div className="mt-6">
                                 <Line
