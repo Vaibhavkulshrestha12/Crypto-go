@@ -112,7 +112,7 @@ func fetchHistoricalData(cryptoID, timeRange string) ([][]float64, error) {
 	case "1y":
 		days = "365"
 	default:
-		days = "1" // Default to 24h if no valid time range is provided
+		days = "1"
 	}
 
 	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/%s/market_chart?vs_currency=inr&days=%s", cryptoID, days)
@@ -133,20 +133,18 @@ func fetchHistoricalData(cryptoID, timeRange string) ([][]float64, error) {
 	return historical.Prices, nil
 }
 
-// Gin route handler for /fetch
 func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
 
 	r.POST("/fetch", func(c *gin.Context) {
 		cryptoIDsInput := c.PostForm("cryptoIDs")
-		timeRange := c.DefaultPostForm("timeRange", "24h") // Default to 24h instead of 30d
+		timeRange := c.DefaultPostForm("timeRange", "24h")
 		cryptoIDs := strings.Split(cryptoIDsInput, ",")
 		for i := range cryptoIDs {
 			cryptoIDs[i] = strings.TrimSpace(cryptoIDs[i])
 		}
 
-		// Fetch live prices
 		cryptoData, err := fetchCryptoPrices(cryptoIDs)
 		if err != nil {
 			log.Printf("Error fetching crypto prices: %v\n", err)
@@ -154,7 +152,6 @@ func main() {
 			return
 		}
 
-		// Fetch historical data for each coin based on the timeRange
 		for i := range cryptoData {
 			historicalPrices, err := fetchHistoricalData(cryptoData[i].ID, timeRange)
 			if err != nil {
@@ -164,7 +161,6 @@ func main() {
 			cryptoData[i].HistoricalData = historicalPrices
 		}
 
-		// Return the combined data as JSON
 		c.JSON(http.StatusOK, gin.H{
 			"cryptoData": cryptoData,
 		})

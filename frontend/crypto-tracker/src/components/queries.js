@@ -1,4 +1,3 @@
-
 import { gql } from '@apollo/client';
 
 export const GET_CRYPTO_DATA = gql`

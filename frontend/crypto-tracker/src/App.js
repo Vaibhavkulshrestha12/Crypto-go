@@ -5,7 +5,7 @@ import Navbar from './components/Navbar';
 
 const App = () => (
   <div>
-    <Navbar /> {/* This will be rendered globally */}
+    <Navbar />
     <Routes>
       <Route path="/tracker" element={<CryptoTracker />} />
     </Routes>

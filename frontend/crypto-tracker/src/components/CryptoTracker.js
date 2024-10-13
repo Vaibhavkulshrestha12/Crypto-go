@@ -41,7 +41,7 @@ const CryptoTracker = () => {
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [timeRange, setTimeRange] = useState('24h'); // Default time range
+    const [timeRange, setTimeRange] = useState('24h');
 
     const handleFetchData = async () => {
         if (!cryptoIDs.trim()) {
@@ -61,7 +61,7 @@ const CryptoTracker = () => {
                 },
                 body: new URLSearchParams({
                     cryptoIDs: ids.join(','),
-                    timeRange: timeRange,  // Send the time range parameter to the backend
+                    timeRange: timeRange,
                 }),
             });
 
@@ -142,12 +142,11 @@ const CryptoTracker = () => {
                             {coin.historical_data && coin.historical_data.length > 0 && (
                                 <div className="mt-6">
                                     <div className="flex justify-between items-center mb-4">
-                                        {/* Time range filter inside the graph */}
                                         <select
                                             value={timeRange}
                                             onChange={(e) => {
                                                 setTimeRange(e.target.value);
-                                                handleFetchData(); // Fetch data when time range changes
+                                                handleFetchData();
                                             }}
                                             className="p-2 border border-gray-700 rounded-lg bg-gray-800 text-white"
                                         >
