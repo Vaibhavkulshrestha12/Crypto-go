@@ -13,17 +13,15 @@ import (
 	"github.com/gin-contrib/cors"
 )
 
-
 type CryptoData struct {
 	ID             string    `json:"id"`
 	Symbol         string    `json:"symbol"`
 	Name           string    `json:"name"`
-	MarketCap      float64   `json:"market_cap"`
-	Volume         float64   `json:"total_volume"`
-	PriceINR       float64   `json:"current_price"`
-	HistoricalData [][]float64 `json:"historical_data"` 
+	MarketCap      float64   `json:"market_cap,omitempty"`
+	Volume         float64   `json:"total_volume,omitempty"`
+	PriceINR       float64   `json:"current_price,omitempty"`
+	HistoricalData [][]float64 `json:"historical_data"`
 }
-
 
 type CoinGeckoResponse struct {
 	ID     string `json:"id"`
@@ -42,11 +40,9 @@ type CoinGeckoResponse struct {
 	} `json:"market_data"`
 }
 
-
 type HistoricalData struct {
 	Prices [][]float64 `json:"prices"`
 }
-
 
 func fetchCryptoPrice(cryptoID string, wg *sync.WaitGroup, results chan<- CryptoData) {
 	defer wg.Done()
@@ -54,26 +50,25 @@ func fetchCryptoPrice(cryptoID string, wg *sync.WaitGroup, results chan<- Crypto
 	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/%s", cryptoID)
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Println("Error fetching price for", cryptoID, ":", err)
+		log.Printf("Error fetching price for %s: %v\n", cryptoID, err)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error reading response for", cryptoID, ":", err)
+		log.Printf("Error reading response for %s: %v\n", cryptoID, err)
 		return
 	}
 
 	var coinData CoinGeckoResponse
 	err = json.Unmarshal(body, &coinData)
 	if err != nil {
-		log.Println("Error unmarshalling response for", cryptoID, ":", err)
+		log.Printf("Error unmarshalling response for %s: %v\n", cryptoID, err)
 		return
 	}
 
-	
-	cryptoData := CryptoData{
+	cryptoDataResponse := CryptoData{
 		ID:        coinData.ID,
 		Symbol:    coinData.Symbol,
 		Name:      coinData.Name,
@@ -82,10 +77,8 @@ func fetchCryptoPrice(cryptoID string, wg *sync.WaitGroup, results chan<- Crypto
 		Volume:    coinData.MarketData.TotalVolume.INR,
 	}
 
-	log.Printf("Fetched data for %s: %+v\n", cryptoID, cryptoData)
-	results <- cryptoData
+	results <- cryptoDataResponse
 }
-
 
 func fetchCryptoPrices(cryptoIDs []string) ([]CryptoData, error) {
 	var wg sync.WaitGroup
@@ -107,11 +100,25 @@ func fetchCryptoPrices(cryptoIDs []string) ([]CryptoData, error) {
 	return cryptoData, nil
 }
 
+func fetchHistoricalData(cryptoID, timeRange string) ([][]float64, error) {
+	var days string
+	switch timeRange {
+	case "24h":
+		days = "1"
+	case "7d":
+		days = "7"
+	case "30d":
+		days = "30"
+	case "1y":
+		days = "365"
+	default:
+		days = "1" // Default to 24h if no valid time range is provided
+	}
 
-func fetchHistoricalData(cryptoID string) ([][]float64, error) {
-	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/%s/market_chart?vs_currency=inr&days=30", cryptoID)
+	url := fmt.Sprintf("https://api.coingecko.com/api/v3/coins/%s/market_chart?vs_currency=inr&days=%s", cryptoID, days)
 	resp, err := http.Get(url)
 	if err != nil {
+		log.Printf("Error fetching historical data for %s: %v\n", cryptoID, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -119,47 +126,49 @@ func fetchHistoricalData(cryptoID string) ([][]float64, error) {
 	var historical HistoricalData
 	err = json.NewDecoder(resp.Body).Decode(&historical)
 	if err != nil {
+		log.Printf("Error unmarshalling historical data for %s: %v\n", cryptoID, err)
 		return nil, err
 	}
 
-	log.Println("Historical Prices for", cryptoID, ":", historical.Prices)
 	return historical.Prices, nil
 }
 
+// Gin route handler for /fetch
 func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
 
-	
 	r.POST("/fetch", func(c *gin.Context) {
 		cryptoIDsInput := c.PostForm("cryptoIDs")
+		timeRange := c.DefaultPostForm("timeRange", "24h") // Default to 24h instead of 30d
 		cryptoIDs := strings.Split(cryptoIDsInput, ",")
 		for i := range cryptoIDs {
 			cryptoIDs[i] = strings.TrimSpace(cryptoIDs[i])
 		}
 
+		// Fetch live prices
 		cryptoData, err := fetchCryptoPrices(cryptoIDs)
 		if err != nil {
-			log.Println("Error fetching crypto prices:", err)
+			log.Printf("Error fetching crypto prices: %v\n", err)
 			c.String(http.StatusInternalServerError, "Error fetching crypto prices")
 			return
 		}
 
-		
+		// Fetch historical data for each coin based on the timeRange
 		for i := range cryptoData {
-			historicalPrices, err := fetchHistoricalData(cryptoData[i].ID)
+			historicalPrices, err := fetchHistoricalData(cryptoData[i].ID, timeRange)
 			if err != nil {
-				log.Println("Error fetching historical data for", cryptoData[i].ID, ":", err)
+				log.Printf("Error fetching historical data for %s: %v\n", cryptoData[i].ID, err)
 				continue
 			}
 			cryptoData[i].HistoricalData = historicalPrices
 		}
 
+		// Return the combined data as JSON
 		c.JSON(http.StatusOK, gin.H{
 			"cryptoData": cryptoData,
 		})
 	})
 
-	
 	r.Run(":8080")
 }

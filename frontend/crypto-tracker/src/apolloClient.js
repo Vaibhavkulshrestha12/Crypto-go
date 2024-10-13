@@ -1,8 +1,9 @@
+// apolloClient.js
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 
 const client = new ApolloClient({
-    uri: 'https://api.coingecko.com/api/v3/graphql', 
-    cache: new InMemoryCache(),
+  uri: 'http://localhost:4000/graphql',  // Adjust this based on your backend setup
+  cache: new InMemoryCache(),
 });
 
 export default client;
